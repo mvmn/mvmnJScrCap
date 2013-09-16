@@ -111,8 +111,12 @@ public class CaptureRectFrame extends JFrame {
 
 		this.setSize(400, 300);
 		SwingHelper.moveToScreenCenter(this);
-		if (gd.isWindowTranslucencySupported(GraphicsDevice.WindowTranslucency.TRANSLUCENT)) {
-			this.setOpacity(0.55f);
+		try {
+			if (gd.isWindowTranslucencySupported(GraphicsDevice.WindowTranslucency.TRANSLUCENT)) {
+				this.setOpacity(0.55f);
+			}
+		} catch (Throwable e) {
+			e.printStackTrace();
 		}
 	}
 

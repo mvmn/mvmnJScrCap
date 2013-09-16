@@ -7,6 +7,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 
@@ -26,7 +28,7 @@ import x.mvmn.jscrcap.model.CapturedImage;
 import x.mvmn.jscrcap.model.CapturesTableModel;
 import x.mvmn.jscrcap.util.swing.SwingHelper;
 
-public class ControlWindow extends JFrame {
+public class ControlWindow extends JFrame implements WindowListener {
 
 	private static final long serialVersionUID = -2200911929118097957L;
 
@@ -78,7 +80,7 @@ public class ControlWindow extends JFrame {
 					{
 						// Workaround. Don't even ask...
 						captureRectFrame.invalidate();
-						captureRectFrame.revalidate();
+						captureRectFrame.validate();
 						captureRectFrame.repaint();
 						int i = 0;
 						while (!captureRectFrame.isVisible() && i++ < 100) {
@@ -94,7 +96,7 @@ public class ControlWindow extends JFrame {
 				{
 					// Same workaround again.
 					captureRectFrame.invalidate();
-					captureRectFrame.revalidate();
+					captureRectFrame.validate();
 					captureRectFrame.repaint();
 					int i = 0;
 					while (captureRectFrame.isVisible() && i++ < 100) {
@@ -184,8 +186,42 @@ public class ControlWindow extends JFrame {
 			}
 		});
 
+		this.addWindowListener(this);
 		this.pack();
 		split.setDividerLocation(0.5);
 		SwingHelper.moveToScreenCenter(this);
+	}
+
+	@Override
+	public void windowOpened(WindowEvent e) {
+	}
+
+	@Override
+	public void windowClosing(WindowEvent e) {
+		captureRectFrame.setVisible(false);
+		captureRectFrame.dispose();
+		this.dispose();
+	}
+
+	@Override
+	public void windowClosed(WindowEvent e) {
+
+	}
+
+	@Override
+	public void windowIconified(WindowEvent e) {
+	}
+
+	@Override
+	public void windowDeiconified(WindowEvent e) {
+
+	}
+
+	@Override
+	public void windowActivated(WindowEvent e) {
+	}
+
+	@Override
+	public void windowDeactivated(WindowEvent e) {
 	}
 }
