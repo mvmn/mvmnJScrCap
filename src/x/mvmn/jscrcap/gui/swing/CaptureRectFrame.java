@@ -24,6 +24,8 @@ public class CaptureRectFrame extends JFrame {
 	private JPanel resizeMePanel = new JPanel();
 	private JLabel inspectorLabel = new JLabel();
 	private volatile Boolean opacityIsSupported = null;
+	private final Point locationOnScreen;
+	private final Rectangle componentRect = new Rectangle();
 
 	public CaptureRectFrame() {
 		super("Capturing rectangle");
@@ -62,7 +64,10 @@ public class CaptureRectFrame extends JFrame {
 
 			public void mouseDragged(MouseEvent e) {
 				Point currCoords = e.getLocationOnScreen();
-				CaptureRectFrame.this.setLocation(currCoords.x - mouseDownCompCoords.x, currCoords.y - mouseDownCompCoords.y);
+				int newX = currCoords.x - mouseDownCompCoords.x;
+				int newY = currCoords.y - mouseDownCompCoords.y;
+				CaptureRectFrame.this.setLocation(newX, newY);
+				locationOnScreen.setLocation(newX, newY);
 				CaptureRectFrame.this.updateInspector();
 			}
 		});
@@ -109,7 +114,8 @@ public class CaptureRectFrame extends JFrame {
 		});
 
 		this.setSize(400, 300);
-		SwingHelper.moveToScreenCenter(this);
+		locationOnScreen = SwingHelper.moveToScreenCenter(this);
+		updateInspector();
 		setOpacity(0.55f);
 	}
 
@@ -130,10 +136,11 @@ public class CaptureRectFrame extends JFrame {
 	}
 
 	public void updateInspector() {
-		try {
-			Rectangle rect = SwingHelper.getComponentRect(this);
-			inspectorLabel.setText(rect.toString());
-		} catch (Exception e) {
-		}
+		SwingHelper.getComponentRect(locationOnScreen, this, componentRect);
+		inspectorLabel.setText(componentRect.toString());
+	}
+
+	public Rectangle getRectSnapshot() {
+		return new Rectangle(componentRect);
 	}
 }

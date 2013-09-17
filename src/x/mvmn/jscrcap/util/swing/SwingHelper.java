@@ -30,13 +30,19 @@ public class SwingHelper {
 		return result;
 	}
 
-	public static Rectangle getComponentRect(Component component) {
-		Point location = component.getLocationOnScreen();
+	public static void getComponentRect(Point locationOnScreen, Component component, Rectangle resultStorage) {
 		Dimension size = component.getSize();
-		return new Rectangle(location.x, location.y, size.width, size.height);
+		resultStorage.setRect(locationOnScreen.x, locationOnScreen.y, size.width, size.height);
 	}
 
-	public static void moveToScreenCenter(Component component) {
+	// public static Rectangle getComponentRect(Component component) {
+	// Rectangle result = new Rectangle();
+	// Point location = component.getLocationOnScreen();
+	// getComponentRect(location, component, result);
+	// return result;
+	// }
+
+	public static Point moveToScreenCenter(Component component) {
 		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 		Dimension componentSize = component.getSize();
 		int newComponentX = screenSize.width - componentSize.width;
@@ -49,7 +55,9 @@ public class SwingHelper {
 			newComponentY = newComponentY / 2;
 		else
 			newComponentY = 0;
-		component.setLocation(newComponentX, newComponentY);
+		Point location = new Point(newComponentX, newComponentY);
+		component.setLocation(location);
+		return location;
 	}
 
 }

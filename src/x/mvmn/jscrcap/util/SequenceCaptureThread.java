@@ -1,6 +1,11 @@
 package x.mvmn.jscrcap.util;
 
-import x.mvmn.jscrcap.gui.swing.ControlWindow;
+import java.awt.Rectangle;
+import java.awt.image.BufferedImage;
+
+import x.mvmn.jscrcap.model.CapturedImage;
+import x.mvmn.jscrcap.model.CapturesTableModel;
+import x.mvmn.jscrcap.util.swing.SwingHelper;
 
 public class SequenceCaptureThread extends Thread {
 
@@ -8,14 +13,13 @@ public class SequenceCaptureThread extends Thread {
 	private volatile boolean stopped = false;
 	private final Object THREAD_LOCK_OBJECT = new Object();
 	private final int captureInterval;
-	final ControlWindow capturer;
+	private final Rectangle captureArea;
+	private final CapturesTableModel capturesTableModel;
 
-	public SequenceCaptureThread(final ControlWindow capturer, final int captureInterval) {
-		// -15 is for dirty workadound in ControlWindow.doCapture() that uses 15
-		// millisec delay between hiding rect. selection window and making a
-		// screenshot
-		this.captureInterval = captureInterval * 1000 - 15;
-		this.capturer = capturer;
+	public SequenceCaptureThread(final CapturesTableModel capturesTableModel, final Rectangle captureArea, final int captureInterval) {
+		this.captureInterval = captureInterval * 1000;
+		this.capturesTableModel = capturesTableModel;
+		this.captureArea = captureArea;
 	}
 
 	public void requestStop() {
@@ -27,17 +31,22 @@ public class SequenceCaptureThread extends Thread {
 	public void run() {
 		boolean stopMe = false;
 		while (!stopMe) {
-			synchronized (THREAD_LOCK_OBJECT) {
-				stopMe = this.stopRequested;
-			}
 			try {
-				capturer.doCapture();
+				BufferedImage screenshot = SwingHelper.getRobot().createScreenCapture(captureArea);
+				capturesTableModel.addImage(new CapturedImage(screenshot));
 				Thread.sleep(captureInterval);
+			} catch (InterruptedException e) {
+				// Ignore interrupted exception
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
+			synchronized (THREAD_LOCK_OBJECT) {
+				stopMe = this.stopRequested;
+			}
 		}
-		stopped = true;
+		synchronized (THREAD_LOCK_OBJECT) {
+			stopped = true;
+		}
 	}
 
 	public boolean isStopped() {

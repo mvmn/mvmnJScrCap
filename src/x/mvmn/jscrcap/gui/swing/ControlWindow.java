@@ -36,6 +36,7 @@ import javax.swing.event.ListSelectionListener;
 import x.mvmn.jscrcap.model.CapturedImage;
 import x.mvmn.jscrcap.model.CapturesTableModel;
 import x.mvmn.jscrcap.util.SequenceCaptureThread;
+import x.mvmn.jscrcap.util.GifExportThread;
 import x.mvmn.jscrcap.util.swing.SwingHelper;
 
 public class ControlWindow extends JFrame implements WindowListener {
@@ -51,6 +52,7 @@ public class ControlWindow extends JFrame implements WindowListener {
 	private final JButton btnCaptureOne = new JButton("Capture image");
 	private final JButton btnCaptureSequence = new JButton("Start sequence capturing");
 	private final JButton btnSaveOne = new JButton("Save image");
+	private final JButton btnExport = new JButton("Export animated GIF");
 	private final JSlider sliderOpacity = new JSlider(JSlider.HORIZONTAL, 0, 100, 55);
 	private final JSlider sliderDelay = new JSlider(JSlider.HORIZONTAL, 1, 600, 5);
 	private final JTextField fldDelay = new JTextField("5");
@@ -88,8 +90,31 @@ public class ControlWindow extends JFrame implements WindowListener {
 
 		btnCaptureOne.addActionListener(new ActionListener() {
 			@Override
-			public void actionPerformed(ActionEvent e) {
-				ControlWindow.this.doCapture();
+			public void actionPerformed(ActionEvent actEvent) {
+				boolean captureRectWasVisible = captureRectFrame.isVisible();
+				Rectangle captureRect = captureRectFrame.getRectSnapshot();
+				captureRectFrame.setSize(0, 0);
+				if (captureRectWasVisible) {
+					captureRectFrame.setVisible(false);
+				}
+				try {
+					// TODO: Dirty workaround for OS X - investigate
+					// alternatives
+					Thread.sleep(50);
+				} catch (InterruptedException e) {
+				}
+				BufferedImage screenshot = SwingHelper.getRobot().createScreenCapture(captureRect);
+				try {
+					// TODO: Dirty workaround for OS X - investigate
+					// alternatives
+					Thread.sleep(15);
+				} catch (InterruptedException e) {
+				}
+				capturesTableModel.addImage(new CapturedImage(screenshot));
+				captureRectFrame.setSize(captureRect.width, captureRect.height);
+				if (captureRectWasVisible) {
+					captureRectFrame.setVisible(true);
+				}
 			}
 		});
 
@@ -150,12 +175,17 @@ public class ControlWindow extends JFrame implements WindowListener {
 				synchronized (CAPTURE_THREAD_LOCK_OBJECT) {
 					SequenceCaptureThread thread = captureThread;
 					if (thread == null) {
-						thread = new SequenceCaptureThread(ControlWindow.this, sliderDelay.getValue());
+						thread = new SequenceCaptureThread(ControlWindow.this.capturesTableModel, ControlWindow.this.captureRectFrame.getRectSnapshot(),
+								sliderDelay.getValue());
 						thread.start();
 						captureThread = thread;
 						btnCaptureSequence.setText("Stop sequence capturing");
 					} else {
 						thread.requestStop();
+						try {
+							thread.interrupt();
+						} catch (Exception ex) {
+						}
 						while (!thread.isStopped()) {
 							// TODO: reconsider
 							Thread.yield();
@@ -163,6 +193,16 @@ public class ControlWindow extends JFrame implements WindowListener {
 						captureThread = null;
 						btnCaptureSequence.setText("Start sequence capturing");
 					}
+				}
+			}
+		});
+
+		btnExport.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent actEvent) {
+				CapturedImage[] images = ControlWindow.this.capturesTableModel.getDataSnapshot();
+				if (images.length > 0) {
+					new GifExportThread(ControlWindow.this, images).start();
 				}
 			}
 		});
@@ -196,7 +236,11 @@ public class ControlWindow extends JFrame implements WindowListener {
 		previewPanel.add(btnSaveOne, BorderLayout.NORTH);
 		previewPanel.add(new JScrollPane(preview), BorderLayout.CENTER);
 
-		JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, new JScrollPane(tblResults), previewPanel);
+		JPanel resultsPanel = new JPanel(new BorderLayout());
+		resultsPanel.add(btnExport, BorderLayout.NORTH);
+		resultsPanel.add(new JScrollPane(tblResults), BorderLayout.CENTER);
+
+		JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, resultsPanel, previewPanel);
 		split.setResizeWeight(0.5);
 		split.setDividerLocation(0.5);
 		contentPane.add(split, BorderLayout.CENTER);
@@ -268,38 +312,6 @@ public class ControlWindow extends JFrame implements WindowListener {
 		this.pack();
 		split.setDividerLocation(0.5);
 		SwingHelper.moveToScreenCenter(this);
-	}
-
-	public void doCapture() {
-		boolean captureRectVisible = captureRectFrame.isVisible();
-		if (!captureRectVisible) {
-			captureRectFrame.setVisible(true);
-			{
-				// Workaround. Don't even ask...
-				captureRectFrame.invalidate();
-				captureRectFrame.validate();
-				captureRectFrame.repaint();
-				int i = 0;
-				while (!captureRectFrame.isVisible() && i++ < 100) {
-					try {
-						Thread.sleep(1);
-					} catch (InterruptedException e1) {
-					}
-				}
-			}
-		}
-		Rectangle captureRect = SwingHelper.getComponentRect(captureRectFrame);
-		captureRectFrame.setSize(0, 0);
-		captureRectFrame.setVisible(false);
-		try {
-			// TODO: Dirty workaround for OS X - investigate alternatives
-			Thread.sleep(15);
-		} catch (InterruptedException e) {
-		}
-		BufferedImage screenshot = SwingHelper.getRobot().createScreenCapture(captureRect);
-		capturesTableModel.addImage(new CapturedImage(screenshot));
-		captureRectFrame.setSize(captureRect.width, captureRect.height);
-		captureRectFrame.setVisible(captureRectVisible);
 	}
 
 	@Override

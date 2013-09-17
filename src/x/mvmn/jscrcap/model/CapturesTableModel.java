@@ -83,4 +83,8 @@ public class CapturesTableModel implements TableModel, Serializable {
 		fireEvent(changeEvent);
 	}
 
+	public CapturedImage[] getDataSnapshot() {
+		return capturedImages.toArray(new CapturedImage[capturedImages.size()]);
+	}
+
 }
