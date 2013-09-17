@@ -96,23 +96,23 @@ public class ControlWindow extends JFrame implements WindowListener {
 				captureRectFrame.setSize(0, 0);
 				if (captureRectWasVisible) {
 					captureRectFrame.setVisible(false);
-				}
-				try {
-					// TODO: Dirty workaround for OS X - investigate
-					// alternatives
-					Thread.sleep(50);
-				} catch (InterruptedException e) {
+					try {
+						// TODO: Dirty workaround for OS X - investigate
+						// alternatives
+						Thread.sleep(50);
+					} catch (InterruptedException e) {
+					}
 				}
 				BufferedImage screenshot = SwingHelper.getRobot().createScreenCapture(captureRect);
-				try {
-					// TODO: Dirty workaround for OS X - investigate
-					// alternatives
-					Thread.sleep(15);
-				} catch (InterruptedException e) {
-				}
 				capturesTableModel.addImage(new CapturedImage(screenshot));
 				captureRectFrame.setSize(captureRect.width, captureRect.height);
 				if (captureRectWasVisible) {
+					try {
+						// TODO: Dirty workaround for OS X - investigate
+						// alternatives
+						Thread.sleep(15);
+					} catch (InterruptedException e) {
+					}
 					captureRectFrame.setVisible(true);
 				}
 			}
