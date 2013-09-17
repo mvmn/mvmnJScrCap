@@ -13,12 +13,15 @@ import java.awt.event.WindowListener;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -58,6 +61,8 @@ public class ControlWindow extends JFrame implements WindowListener {
 	private final JSlider sliderDelay = new JSlider(JSlider.HORIZONTAL, 1, 600, 5);
 	private final JTextField fldDelay = new JTextField("5");
 	private final JCheckBox cbLoopGif = new JCheckBox("Loop GIF");
+	private final JComboBox<String> cbxImageFormat;
+	private final String[] writerFormatNames;
 
 	private volatile CapturedImage currentlyPreviewed = null;
 	private volatile SequenceCaptureThread captureThread = null;
@@ -65,6 +70,39 @@ public class ControlWindow extends JFrame implements WindowListener {
 
 	public ControlWindow() {
 		super("MVMn Java Screen Capture tool");
+
+		Set<String> uniqueFormatNames = new HashSet<String>();
+		{
+			String[] availableFormatNames = ImageIO.getWriterFormatNames();
+			Set<String> allFormatNames = new HashSet<String>();
+			for (String formatName : availableFormatNames) {
+				allFormatNames.add(formatName);
+			}
+			for (String formatName : availableFormatNames) {
+				String lowercaseName = formatName.toLowerCase();
+				if (!lowercaseName.equals(formatName)) {
+					if (!allFormatNames.contains(formatName.toLowerCase())) {
+						uniqueFormatNames.add(formatName);
+					}
+				} else {
+					uniqueFormatNames.add(formatName);
+				}
+			}
+			writerFormatNames = uniqueFormatNames.toArray(new String[uniqueFormatNames.size()]);
+		}
+		cbxImageFormat = new JComboBox<String>(writerFormatNames);
+		if (writerFormatNames.length > 0) {
+			if (uniqueFormatNames.contains("jpg")) {
+				cbxImageFormat.setSelectedItem("jpg");
+			} else if (uniqueFormatNames.contains("jpeg")) {
+				cbxImageFormat.setSelectedItem("jpeg");
+			} else {
+				cbxImageFormat.setSelectedIndex(0);
+			}
+		} else {
+			cbxImageFormat.setEnabled(false);
+			btnSaveOne.setEnabled(false);
+		}
 
 		tblResults = new JTable(capturesTableModel);
 
@@ -238,6 +276,7 @@ public class ControlWindow extends JFrame implements WindowListener {
 		JPanel previewPanel = new JPanel(new BorderLayout());
 		previewPanel.add(btnSaveOne, BorderLayout.NORTH);
 		previewPanel.add(new JScrollPane(preview), BorderLayout.CENTER);
+		previewPanel.add(cbxImageFormat, BorderLayout.SOUTH);
 
 		JPanel resultsPanel = new JPanel(new BorderLayout());
 		resultsPanel.add(btnExport, BorderLayout.NORTH);
@@ -299,20 +338,17 @@ public class ControlWindow extends JFrame implements WindowListener {
 			public void actionPerformed(ActionEvent e) {
 				if (currentlyPreviewed != null) {
 					CapturedImage capture = currentlyPreviewed;
-					Object formatName = JOptionPane.showInputDialog(ControlWindow.this, "Choose format", "Save image", JOptionPane.INFORMATION_MESSAGE, null,
-							ImageIO.getWriterFormatNames(), ImageIO.getWriterFormatNames()[0]);
-					if (formatName != null) {
-						JFileChooser chooser = new JFileChooser();
-						chooser.setMultiSelectionEnabled(false);
-						// chooser.setName("image." + formatName.toString());
-						if (JFileChooser.APPROVE_OPTION == chooser.showSaveDialog(ControlWindow.this)) {
-							try {
-								ImageIO.write(capture.getImage(), formatName.toString(), chooser.getSelectedFile());
-							} catch (IOException e1) {
-								e1.printStackTrace();
-								JOptionPane.showMessageDialog(ControlWindow.this,
-										"Error occurred while saving: " + e1.getClass().getSimpleName() + " - " + e1.getMessage());
-							}
+
+					JFileChooser chooser = new JFileChooser();
+					chooser.setMultiSelectionEnabled(false);
+					// chooser.setName("image." + formatName.toString());
+					if (JFileChooser.APPROVE_OPTION == chooser.showSaveDialog(ControlWindow.this)) {
+						try {
+							ImageIO.write(capture.getImage(), cbxImageFormat.getSelectedItem().toString(), chooser.getSelectedFile());
+						} catch (IOException e1) {
+							e1.printStackTrace();
+							JOptionPane.showMessageDialog(ControlWindow.this,
+									"Error occurred while saving: " + e1.getClass().getSimpleName() + " - " + e1.getMessage());
 						}
 					}
 				}
