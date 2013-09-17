@@ -18,6 +18,7 @@ import java.util.regex.Pattern;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -56,6 +57,7 @@ public class ControlWindow extends JFrame implements WindowListener {
 	private final JSlider sliderOpacity = new JSlider(JSlider.HORIZONTAL, 0, 100, 55);
 	private final JSlider sliderDelay = new JSlider(JSlider.HORIZONTAL, 1, 600, 5);
 	private final JTextField fldDelay = new JTextField("5");
+	private final JCheckBox cbLoopGif = new JCheckBox("Loop GIF");
 
 	private volatile CapturedImage currentlyPreviewed = null;
 	private volatile SequenceCaptureThread captureThread = null;
@@ -200,9 +202,10 @@ public class ControlWindow extends JFrame implements WindowListener {
 		btnExport.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent actEvent) {
-				CapturedImage[] images = ControlWindow.this.capturesTableModel.getDataSnapshot();
-				if (images.length > 0) {
-					new GifExportThread(ControlWindow.this, images).start();
+				JFileChooser fileChooser = new JFileChooser();
+				if (fileChooser.showSaveDialog(ControlWindow.this) == JFileChooser.APPROVE_OPTION) {
+					CapturedImage[] images = ControlWindow.this.capturesTableModel.getDataSnapshot();
+					new GifExportThread(ControlWindow.this, images, sliderDelay.getValue(), fileChooser.getSelectedFile(), cbLoopGif.isSelected()).start();
 				}
 			}
 		});
@@ -239,6 +242,7 @@ public class ControlWindow extends JFrame implements WindowListener {
 		JPanel resultsPanel = new JPanel(new BorderLayout());
 		resultsPanel.add(btnExport, BorderLayout.NORTH);
 		resultsPanel.add(new JScrollPane(tblResults), BorderLayout.CENTER);
+		resultsPanel.add(cbLoopGif, BorderLayout.SOUTH);
 
 		JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, resultsPanel, previewPanel);
 		split.setResizeWeight(0.5);
