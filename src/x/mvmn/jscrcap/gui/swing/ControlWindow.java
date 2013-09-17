@@ -260,6 +260,13 @@ public class ControlWindow extends JFrame implements WindowListener {
 						for (int i = selectedRows.length - 1; i >= 0; i--) {
 							capturesTableModel.delete(selectedRows[i]);
 						}
+						// Dear JVM,
+						// It is quite possible that several relatively heavy
+						// objects are ready to be removed from the heap, so
+						// please kindly accept my suggestion to execute garbage
+						// collection at this moment.
+						// Yours truly.
+						System.gc();
 					}
 				}
 			}
