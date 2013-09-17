@@ -8,8 +8,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.image.BufferedImage;
@@ -31,6 +29,8 @@ import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 
 import x.mvmn.jscrcap.model.CapturedImage;
 import x.mvmn.jscrcap.model.CapturesTableModel;
@@ -202,29 +202,15 @@ public class ControlWindow extends JFrame implements WindowListener {
 		split.setDividerLocation(0.5);
 		contentPane.add(split, BorderLayout.CENTER);
 
-		tblResults.addMouseListener(new MouseListener() {
-
+		tblResults.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 			@Override
-			public void mouseReleased(MouseEvent e) {
-			}
-
-			@Override
-			public void mousePressed(MouseEvent e) {
-			}
-
-			@Override
-			public void mouseExited(MouseEvent e) {
-			}
-
-			@Override
-			public void mouseEntered(MouseEvent e) {
-			}
-
-			@Override
-			public void mouseClicked(MouseEvent e) {
+			public void valueChanged(ListSelectionEvent e) {
 				if (tblResults.getSelectedRow() >= 0) {
-					currentlyPreviewed = capturesTableModel.getValueAt(tblResults.getSelectedRow(), 0);
-					preview.setIcon(new ImageIcon(currentlyPreviewed.getImage()));
+					CapturedImage toPreview = capturesTableModel.getValueAt(tblResults.getSelectedRow(), 0);
+					if (toPreview != currentlyPreviewed) {
+						currentlyPreviewed = toPreview;
+						preview.setIcon(new ImageIcon(toPreview.getImage()));
+					}
 				}
 			}
 		});

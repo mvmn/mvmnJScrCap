@@ -58,17 +58,29 @@ public class CapturesTableModel implements TableModel, Serializable {
 		modelListeners.remove(l);
 	}
 
-	public void addImage(CapturedImage image) {
-		capturedImages.add(image);
-		int modifiedRow = capturedImages.size();
-		TableModelEvent changeEvent = new TableModelEvent(this, modifiedRow, modifiedRow, 0, TableModelEvent.INSERT);
+	public void delete(int index) {
+		if (index < capturedImages.size()) {
+			capturedImages.remove(index);
+			TableModelEvent changeEvent = new TableModelEvent(this, index, index, 0, TableModelEvent.DELETE);
+			fireEvent(changeEvent);
+		}
+	}
+
+	protected void fireEvent(TableModelEvent event) {
 		for (TableModelListener listener : modelListeners) {
 			try {
-				listener.tableChanged(changeEvent);
+				listener.tableChanged(event);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
+	}
+
+	public void addImage(CapturedImage image) {
+		capturedImages.add(image);
+		int modifiedRow = capturedImages.size();
+		TableModelEvent changeEvent = new TableModelEvent(this, modifiedRow, modifiedRow, 0, TableModelEvent.INSERT);
+		fireEvent(changeEvent);
 	}
 
 }
