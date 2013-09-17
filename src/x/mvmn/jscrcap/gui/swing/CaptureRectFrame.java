@@ -130,7 +130,10 @@ public class CaptureRectFrame extends JFrame {
 	}
 
 	public void updateInspector() {
-		Rectangle rect = SwingHelper.getComponentRect(this);
-		inspectorLabel.setText(rect.toString());
+		try {
+			Rectangle rect = SwingHelper.getComponentRect(this);
+			inspectorLabel.setText(rect.toString());
+		} catch (Exception e) {
+		}
 	}
 }
