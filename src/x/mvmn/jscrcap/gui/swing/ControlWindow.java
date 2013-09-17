@@ -12,6 +12,7 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
@@ -86,7 +87,6 @@ public class ControlWindow extends JFrame implements WindowListener {
 		});
 
 		btnCaptureOne.addActionListener(new ActionListener() {
-
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				ControlWindow.this.doCapture();
@@ -94,7 +94,6 @@ public class ControlWindow extends JFrame implements WindowListener {
 		});
 
 		sliderOpacity.addChangeListener(new ChangeListener() {
-
 			@Override
 			public void stateChanged(ChangeEvent e) {
 				ControlWindow.this.captureRectFrame.setOpacity(((float) ControlWindow.this.sliderOpacity.getValue()) / 100);
@@ -201,6 +200,30 @@ public class ControlWindow extends JFrame implements WindowListener {
 		split.setResizeWeight(0.5);
 		split.setDividerLocation(0.5);
 		contentPane.add(split, BorderLayout.CENTER);
+
+		tblResults.addKeyListener(new KeyListener() {
+
+			@Override
+			public void keyTyped(KeyEvent e) {
+			}
+
+			@Override
+			public void keyReleased(KeyEvent e) {
+				if (e.getKeyCode() == KeyEvent.VK_BACK_SPACE || e.getKeyCode() == KeyEvent.VK_DELETE) {
+					int[] selectedRows = tblResults.getSelectedRows();
+					if (selectedRows != null && selectedRows.length > 0) {
+						Arrays.sort(selectedRows);
+						for (int i = selectedRows.length - 1; i >= 0; i--) {
+							capturesTableModel.delete(selectedRows[i]);
+						}
+					}
+				}
+			}
+
+			@Override
+			public void keyPressed(KeyEvent e) {
+			}
+		});
 
 		tblResults.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 			@Override
