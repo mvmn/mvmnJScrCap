@@ -129,9 +129,13 @@ public class ControlWindow extends JFrame implements WindowListener {
 		JPanel buttonsForCapturingPanel = new JPanel(new BorderLayout());
 		buttonsForCapturingPanel.add(btnCaptureOne, BorderLayout.EAST);
 
+		// TODO: stop overusing BorderLayout - use more appropriate layout here
 		JPanel controlsForCaptureRectControlPanel = new JPanel(new BorderLayout());
 		controlsForCaptureRectControlPanel.add(btnToggleViewCaptureRect, BorderLayout.WEST);
-		controlsForCaptureRectControlPanel.add(sliderOpacity, BorderLayout.CENTER);
+		JPanel sliderOpacityPanel = new JPanel(new BorderLayout());
+		sliderOpacityPanel.add(new JLabel("Opacity:"), BorderLayout.WEST);
+		sliderOpacityPanel.add(sliderOpacity, BorderLayout.CENTER);
+		controlsForCaptureRectControlPanel.add(sliderOpacityPanel, BorderLayout.CENTER);
 		controlsForCaptureRectControlPanel.add(btnResetCaptureRect, BorderLayout.EAST);
 
 		Container contentPane = this.getContentPane();
