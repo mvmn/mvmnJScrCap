@@ -21,8 +21,11 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSlider;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import x.mvmn.jscrcap.model.CapturedImage;
 import x.mvmn.jscrcap.model.CapturesTableModel;
@@ -40,6 +43,7 @@ public class ControlWindow extends JFrame implements WindowListener {
 	private final JLabel preview = new JLabel();
 	private final JButton btnCaptureOne = new JButton("Capture image");
 	private final JButton btnSaveOne = new JButton("Save image");
+	private final JSlider sliderOpacity = new JSlider(JSlider.HORIZONTAL, 0, 100, 55);
 
 	private volatile CapturedImage currentlyPreviewed = null;
 
@@ -92,6 +96,7 @@ public class ControlWindow extends JFrame implements WindowListener {
 					}
 				}
 				Rectangle captureRect = SwingHelper.getComponentRect(captureRectFrame);
+				captureRectFrame.setSize(0, 0);
 				captureRectFrame.setVisible(false);
 				{
 					// Same workaround again.
@@ -108,21 +113,31 @@ public class ControlWindow extends JFrame implements WindowListener {
 				}
 				BufferedImage screenshot = SwingHelper.getRobot().createScreenCapture(captureRect);
 				capturesTableModel.addImage(new CapturedImage(screenshot));
+				captureRectFrame.setSize(captureRect.width, captureRect.height);
 				captureRectFrame.setVisible(captureRectVisible);
+			}
+		});
+
+		sliderOpacity.addChangeListener(new ChangeListener() {
+
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				ControlWindow.this.captureRectFrame.setOpacity(((float) ControlWindow.this.sliderOpacity.getValue()) / 100);
 			}
 		});
 
 		JPanel buttonsForCapturingPanel = new JPanel(new BorderLayout());
 		buttonsForCapturingPanel.add(btnCaptureOne, BorderLayout.EAST);
 
-		JPanel buttonsForCaptureRectControlPanel = new JPanel(new BorderLayout());
-		buttonsForCaptureRectControlPanel.add(btnToggleViewCaptureRect, BorderLayout.CENTER);
-		buttonsForCaptureRectControlPanel.add(btnResetCaptureRect, BorderLayout.EAST);
+		JPanel controlsForCaptureRectControlPanel = new JPanel(new BorderLayout());
+		controlsForCaptureRectControlPanel.add(btnToggleViewCaptureRect, BorderLayout.WEST);
+		controlsForCaptureRectControlPanel.add(sliderOpacity, BorderLayout.CENTER);
+		controlsForCaptureRectControlPanel.add(btnResetCaptureRect, BorderLayout.EAST);
 
 		Container contentPane = this.getContentPane();
 		contentPane.setLayout(new BorderLayout());
 		contentPane.add(buttonsForCapturingPanel, BorderLayout.NORTH);
-		contentPane.add(buttonsForCaptureRectControlPanel, BorderLayout.SOUTH);
+		contentPane.add(controlsForCaptureRectControlPanel, BorderLayout.SOUTH);
 
 		JPanel previewPanel = new JPanel(new BorderLayout());
 		previewPanel.add(btnSaveOne, BorderLayout.NORTH);

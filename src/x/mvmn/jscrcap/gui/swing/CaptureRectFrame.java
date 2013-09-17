@@ -23,13 +23,12 @@ public class CaptureRectFrame extends JFrame {
 	private JPanel moveMePanel = new JPanel();
 	private JPanel resizeMePanel = new JPanel();
 	private JLabel inspectorLabel = new JLabel();
+	private volatile Boolean opacityIsSupported = null;
 
 	public CaptureRectFrame() {
 		super("Capturing rectangle");
 		this.setUndecorated(true);
 		this.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-		GraphicsDevice gd = ge.getDefaultScreenDevice();
 		this.getContentPane().setLayout(new BorderLayout());
 		moveMePanel.add(new JLabel("Drag here to move"));
 		this.getContentPane().add(moveMePanel, BorderLayout.CENTER);
@@ -111,12 +110,22 @@ public class CaptureRectFrame extends JFrame {
 
 		this.setSize(400, 300);
 		SwingHelper.moveToScreenCenter(this);
-		try {
-			if (gd.isWindowTranslucencySupported(GraphicsDevice.WindowTranslucency.TRANSLUCENT)) {
-				this.setOpacity(0.55f);
+		setOpacity(0.55f);
+	}
+
+	public void setOpacity(float value) {
+		if (!(opacityIsSupported != null && !opacityIsSupported.booleanValue())) {
+			opacityIsSupported = false;
+			try {
+				GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+				GraphicsDevice gd = ge.getDefaultScreenDevice();
+				if (gd.isWindowTranslucencySupported(GraphicsDevice.WindowTranslucency.TRANSLUCENT)) {
+					super.setOpacity(value);
+					opacityIsSupported = true;
+				}
+			} catch (Throwable e) {
+				e.printStackTrace();
 			}
-		} catch (Throwable e) {
-			e.printStackTrace();
 		}
 	}
 
