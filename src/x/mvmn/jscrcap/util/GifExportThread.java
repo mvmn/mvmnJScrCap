@@ -22,18 +22,18 @@ public class GifExportThread extends Thread {
 
 	private final CapturedImage[] captures;
 	private final Component parentComponent;
-	private final int delayBetweenFramesInSeconds;
+	private final int delayBetweenFramesInTenthOfSeconds;
 	private final File outputFile;
 	private final boolean loopContinuously;
 	private final ExportProgressDialog progressDialog;
 	private volatile boolean stopRequested = false;
 
 	public GifExportThread(final Component parentComponent, final ExportProgressDialog progressDialog, final CapturedImage[] captures,
-			final int delayBetweenFramesInSeconds, final File outputFile, final boolean loopContinuously) {
+			final int delayBetweenFramesInTenthOfSeconds, final File outputFile, final boolean loopContinuously) {
 		this.progressDialog = progressDialog;
 		this.captures = captures;
 		this.parentComponent = parentComponent;
-		this.delayBetweenFramesInSeconds = delayBetweenFramesInSeconds;
+		this.delayBetweenFramesInTenthOfSeconds = delayBetweenFramesInTenthOfSeconds;
 		this.outputFile = outputFile;
 		this.loopContinuously = loopContinuously;
 		progressDialog.setExportThread(this);
@@ -75,7 +75,7 @@ public class GifExportThread extends Thread {
 				graphicsControlExtensionNode.setAttribute("disposalMethod", "none");
 				graphicsControlExtensionNode.setAttribute("userInputFlag", "FALSE");
 				graphicsControlExtensionNode.setAttribute("transparentColorFlag", "FALSE");
-				graphicsControlExtensionNode.setAttribute("delayTime", Integer.toString(delayBetweenFramesInSeconds * 100));
+				graphicsControlExtensionNode.setAttribute("delayTime", Integer.toString(delayBetweenFramesInTenthOfSeconds * 10));
 				graphicsControlExtensionNode.setAttribute("transparentColorIndex", "0");
 
 				IIOMetadataNode commentsNode = getNode(root, "CommentExtensions");

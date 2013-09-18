@@ -47,6 +47,8 @@ public class ControlWindow extends JFrame implements WindowListener {
 
 	private static final long serialVersionUID = -2200911929118097957L;
 
+	public static final int MAX_DELAY_VALUE = 6000;
+
 	private final JButton btnToggleViewCaptureRect = new JButton("Show capture rect");
 	private final JButton btnResetCaptureRect = new JButton("Reset capture rect");
 	private final CaptureRectFrame captureRectFrame = new CaptureRectFrame();
@@ -58,7 +60,7 @@ public class ControlWindow extends JFrame implements WindowListener {
 	private final JButton btnSaveOne = new JButton("Save image");
 	private final JButton btnExport = new JButton("Export animated GIF");
 	private final JSlider sliderOpacity = new JSlider(JSlider.HORIZONTAL, 0, 100, 55);
-	private final JSlider sliderDelay = new JSlider(JSlider.HORIZONTAL, 1, 600, 5);
+	private final JSlider sliderDelay = new JSlider(JSlider.HORIZONTAL, 1, MAX_DELAY_VALUE, 10);
 	private final JTextField fldDelay = new JTextField("5");
 	private final JCheckBox cbLoopGif = new JCheckBox("Loop GIF");
 	private final JComboBox<String> cbxImageFormat;
@@ -185,8 +187,8 @@ public class ControlWindow extends JFrame implements WindowListener {
 							if (validIntVal < 0) {
 								validIntVal = -validIntVal;
 							}
-							if (validIntVal > 600) {
-								validIntVal = 600;
+							if (validIntVal > MAX_DELAY_VALUE) {
+								validIntVal = MAX_DELAY_VALUE;
 							}
 							sliderDelay.setValue(validIntVal);
 							if (intVal != validIntVal) {
@@ -258,7 +260,6 @@ public class ControlWindow extends JFrame implements WindowListener {
 								JOptionPane.OK_CANCEL_OPTION));
 					}
 					if (sizesOkToExport) {
-
 						JFileChooser fileChooser = new JFileChooser();
 						if (fileChooser.showSaveDialog(ControlWindow.this) == JFileChooser.APPROVE_OPTION) {
 							ExportProgressDialog progressDialog = new ExportProgressDialog(ControlWindow.this, images.length, fileChooser.getSelectedFile()
@@ -279,7 +280,7 @@ public class ControlWindow extends JFrame implements WindowListener {
 
 		JPanel controlsForDelayPanel = new JPanel(new BorderLayout());
 		controlsForDelayPanel.add(sliderDelay, BorderLayout.CENTER);
-		controlsForDelayPanel.add(new JLabel("Delay (seconds)"), BorderLayout.WEST);
+		controlsForDelayPanel.add(new JLabel("Delay (1/10 of second)"), BorderLayout.WEST);
 		controlsForDelayPanel.add(fldDelay, BorderLayout.EAST);
 		fldDelay.setPreferredSize(new Dimension(fldDelay.getFont().getSize() * 6, fldDelay.getPreferredSize().height));
 

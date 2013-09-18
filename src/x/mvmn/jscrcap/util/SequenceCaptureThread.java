@@ -16,7 +16,7 @@ public class SequenceCaptureThread extends Thread {
 	private final CapturesTableModel capturesTableModel;
 
 	public SequenceCaptureThread(final CapturesTableModel capturesTableModel, final Rectangle captureArea, final int captureInterval) {
-		this.captureInterval = captureInterval * 1000;
+		this.captureInterval = captureInterval * 100;
 		this.capturesTableModel = capturesTableModel;
 		this.captureArea = captureArea;
 	}
