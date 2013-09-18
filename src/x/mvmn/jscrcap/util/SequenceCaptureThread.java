@@ -11,7 +11,6 @@ public class SequenceCaptureThread extends Thread {
 
 	private volatile boolean stopRequested = false;
 	private volatile boolean stopped = false;
-	private final Object THREAD_LOCK_OBJECT = new Object();
 	private final int captureInterval;
 	private final Rectangle captureArea;
 	private final CapturesTableModel capturesTableModel;
@@ -23,9 +22,7 @@ public class SequenceCaptureThread extends Thread {
 	}
 
 	public void requestStop() {
-		synchronized (THREAD_LOCK_OBJECT) {
-			this.stopRequested = true;
-		}
+		this.stopRequested = true;
 	}
 
 	public void run() {
@@ -40,21 +37,15 @@ public class SequenceCaptureThread extends Thread {
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-			synchronized (THREAD_LOCK_OBJECT) {
-				stopMe = this.stopRequested;
-			}
+			stopMe = this.stopRequested;
 		}
-		synchronized (THREAD_LOCK_OBJECT) {
-			stopped = true;
-		}
+		stopped = true;
 	}
 
 	public boolean isStopped() {
 		boolean result = this.stopped;
 		if (!result) {
-			synchronized (THREAD_LOCK_OBJECT) {
-				result = this.stopped;
-			}
+			result = this.stopped;
 		}
 		return result;
 	}

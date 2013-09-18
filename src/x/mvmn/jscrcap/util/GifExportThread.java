@@ -15,6 +15,7 @@ import javax.imageio.stream.FileImageOutputStream;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
+import x.mvmn.jscrcap.gui.swing.ExportProgressDialog;
 import x.mvmn.jscrcap.model.CapturedImage;
 
 public class GifExportThread extends Thread {
@@ -24,14 +25,22 @@ public class GifExportThread extends Thread {
 	private final int delayBetweenFramesInSeconds;
 	private final File outputFile;
 	private final boolean loopContinuously;
+	private final ExportProgressDialog progressDialog;
+	private volatile boolean stopRequested = false;
 
-	public GifExportThread(final Component parentComponent, final CapturedImage[] captures, final int delayBetweenFramesInSeconds, final File outputFile,
-			final boolean loopContinuously) {
+	public GifExportThread(final Component parentComponent, final ExportProgressDialog progressDialog, final CapturedImage[] captures,
+			final int delayBetweenFramesInSeconds, final File outputFile, final boolean loopContinuously) {
+		this.progressDialog = progressDialog;
 		this.captures = captures;
 		this.parentComponent = parentComponent;
 		this.delayBetweenFramesInSeconds = delayBetweenFramesInSeconds;
 		this.outputFile = outputFile;
 		this.loopContinuously = loopContinuously;
+		progressDialog.setExportThread(this);
+	}
+
+	public void requestStop() {
+		this.stopRequested = true;
 	}
 
 	public void run() {
@@ -89,11 +98,19 @@ public class GifExportThread extends Thread {
 
 				writer.prepareWriteSequence(null);
 
+				int i = 0;
 				for (CapturedImage capture : captures) {
+					if (stopRequested) {
+						throw new InterruptedException();
+					}
 					writer.writeToSequence(new IIOImage(capture.getImage(), null, imageMetaData), imageWriteParam);
+					progressDialog.setProgress(++i);
+					Thread.yield();
 				}
 
 				resultMessage = "Animated GIF successfully saved to " + outputFile.getAbsolutePath();
+			} catch (InterruptedException iex) {
+				resultMessage = "Export interrupted.";
 			} catch (Exception e) {
 				resultMessage = "Error occurred while exporting animated GIF: " + e.getClass().getSimpleName() + " - " + e.getMessage();
 			} finally {
@@ -116,6 +133,7 @@ public class GifExportThread extends Thread {
 
 			@Override
 			public void run() {
+				progressDialog.setVisible(false);
 				JOptionPane.showMessageDialog(parentComponent, message);
 			}
 

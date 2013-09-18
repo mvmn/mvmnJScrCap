@@ -243,7 +243,14 @@ public class ControlWindow extends JFrame implements WindowListener {
 				JFileChooser fileChooser = new JFileChooser();
 				if (fileChooser.showSaveDialog(ControlWindow.this) == JFileChooser.APPROVE_OPTION) {
 					CapturedImage[] images = ControlWindow.this.capturesTableModel.getDataSnapshot();
-					new GifExportThread(ControlWindow.this, images, sliderDelay.getValue(), fileChooser.getSelectedFile(), cbLoopGif.isSelected()).start();
+					ExportProgressDialog progressDialog = new ExportProgressDialog(ControlWindow.this, images.length, fileChooser.getSelectedFile()
+							.getAbsolutePath());
+					progressDialog.pack();
+					SwingHelper.moveToScreenCenter(progressDialog);
+					progressDialog.setVisible(true);
+					GifExportThread exportThread = new GifExportThread(ControlWindow.this, progressDialog, images, sliderDelay.getValue(), fileChooser
+							.getSelectedFile(), cbLoopGif.isSelected());
+					exportThread.start();
 				}
 			}
 		});
