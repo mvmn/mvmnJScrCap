@@ -240,17 +240,39 @@ public class ControlWindow extends JFrame implements WindowListener {
 		btnExport.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent actEvent) {
-				JFileChooser fileChooser = new JFileChooser();
-				if (fileChooser.showSaveDialog(ControlWindow.this) == JFileChooser.APPROVE_OPTION) {
-					CapturedImage[] images = ControlWindow.this.capturesTableModel.getDataSnapshot();
-					ExportProgressDialog progressDialog = new ExportProgressDialog(ControlWindow.this, images.length, fileChooser.getSelectedFile()
-							.getAbsolutePath());
-					progressDialog.pack();
-					SwingHelper.moveToScreenCenter(progressDialog);
-					progressDialog.setVisible(true);
-					GifExportThread exportThread = new GifExportThread(ControlWindow.this, progressDialog, images, sliderDelay.getValue(), fileChooser
-							.getSelectedFile(), cbLoopGif.isSelected());
-					exportThread.start();
+				CapturedImage[] images = ControlWindow.this.capturesTableModel.getDataSnapshot();
+				if (images.length > 0) {
+					boolean sizesOkToExport = true;
+					int width = images[0].getImage().getWidth();
+					int height = images[0].getImage().getHeight();
+					for (int i = 1; i < images.length; i++) {
+						BufferedImage image = images[i].getImage();
+						if (image.getWidth() != width || image.getHeight() != height) {
+							sizesOkToExport = false;
+							break;
+						}
+					}
+					if (!sizesOkToExport) {
+						sizesOkToExport = (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(ControlWindow.this,
+								"Frames have different sizes - resulting GIF will be corrupt. Continue anyway?", "Frames sizes mismatch",
+								JOptionPane.OK_CANCEL_OPTION));
+					}
+					if (sizesOkToExport) {
+
+						JFileChooser fileChooser = new JFileChooser();
+						if (fileChooser.showSaveDialog(ControlWindow.this) == JFileChooser.APPROVE_OPTION) {
+							ExportProgressDialog progressDialog = new ExportProgressDialog(ControlWindow.this, images.length, fileChooser.getSelectedFile()
+									.getAbsolutePath());
+							progressDialog.pack();
+							SwingHelper.moveToScreenCenter(progressDialog);
+							progressDialog.setVisible(true);
+							GifExportThread exportThread = new GifExportThread(ControlWindow.this, progressDialog, images, sliderDelay.getValue(), fileChooser
+									.getSelectedFile(), cbLoopGif.isSelected());
+							exportThread.start();
+						}
+					}
+				} else {
+					JOptionPane.showMessageDialog(ControlWindow.this, "Nothing to export.");
 				}
 			}
 		});
