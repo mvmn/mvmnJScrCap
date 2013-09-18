@@ -47,7 +47,8 @@ public class ControlWindow extends JFrame implements WindowListener {
 
 	private static final long serialVersionUID = -2200911929118097957L;
 
-	public static final int MAX_DELAY_VALUE = 6000;
+	private static final int MAX_DELAY_VALUE = 6000;
+	private static final int DEFAULT_DELAY_VALUE = 10;
 
 	private final JButton btnToggleViewCaptureRect = new JButton("Show capture rect");
 	private final JButton btnResetCaptureRect = new JButton("Reset capture rect");
@@ -60,8 +61,8 @@ public class ControlWindow extends JFrame implements WindowListener {
 	private final JButton btnSaveOne = new JButton("Save image");
 	private final JButton btnExport = new JButton("Export animated GIF");
 	private final JSlider sliderOpacity = new JSlider(JSlider.HORIZONTAL, 0, 100, 55);
-	private final JSlider sliderDelay = new JSlider(JSlider.HORIZONTAL, 1, MAX_DELAY_VALUE, 10);
-	private final JTextField fldDelay = new JTextField("5");
+	private final JSlider sliderDelay = new JSlider(JSlider.HORIZONTAL, 1, MAX_DELAY_VALUE, DEFAULT_DELAY_VALUE);
+	private final JTextField fldDelay = new JTextField(String.valueOf(DEFAULT_DELAY_VALUE));
 	private final JCheckBox cbLoopGif = new JCheckBox("Loop GIF");
 	private final JComboBox<String> cbxImageFormat;
 	private final String[] writerFormatNames;
