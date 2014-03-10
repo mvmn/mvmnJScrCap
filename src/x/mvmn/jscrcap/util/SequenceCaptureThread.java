@@ -31,7 +31,9 @@ public class SequenceCaptureThread extends Thread {
 			try {
 				BufferedImage screenshot = SwingHelper.getRobot().createScreenCapture(captureArea);
 				capturesTableModel.addImage(new CapturedImage(screenshot));
-				Thread.sleep(captureInterval);
+				if (captureInterval != 0) {
+					Thread.sleep(captureInterval);
+				}
 			} catch (InterruptedException e) {
 				// Ignore interrupted exception
 			} catch (Exception e) {
