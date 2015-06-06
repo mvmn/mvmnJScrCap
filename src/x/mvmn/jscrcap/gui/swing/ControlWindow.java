@@ -3,6 +3,7 @@ package x.mvmn.jscrcap.gui.swing;
 import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.GridLayout;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -11,8 +12,10 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -32,6 +35,7 @@ import javax.swing.JSlider;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
@@ -39,8 +43,8 @@ import javax.swing.event.ListSelectionListener;
 
 import x.mvmn.jscrcap.model.CapturedImage;
 import x.mvmn.jscrcap.model.CapturesTableModel;
-import x.mvmn.jscrcap.util.SequenceCaptureThread;
 import x.mvmn.jscrcap.util.GifExportThread;
+import x.mvmn.jscrcap.util.SequenceCaptureThread;
 import x.mvmn.jscrcap.util.swing.SwingHelper;
 
 public class ControlWindow extends JFrame implements WindowListener {
@@ -60,6 +64,7 @@ public class ControlWindow extends JFrame implements WindowListener {
 	private final JButton btnCaptureSequence = new JButton("Start sequence capturing");
 	private final JButton btnSaveOne = new JButton("Save image");
 	private final JButton btnExport = new JButton("Export animated GIF");
+	private final JButton btnLoad = new JButton("Load images");
 	private final JSlider sliderOpacity = new JSlider(JSlider.HORIZONTAL, 0, 100, 55);
 	private final JSlider sliderDelay = new JSlider(JSlider.HORIZONTAL, 1, MAX_DELAY_VALUE, DEFAULT_DELAY_VALUE);
 	private final JTextField fldDelay = new JTextField(String.valueOf(DEFAULT_DELAY_VALUE));
@@ -261,10 +266,10 @@ public class ControlWindow extends JFrame implements WindowListener {
 								JOptionPane.OK_CANCEL_OPTION));
 					}
 					if (sizesOkToExport) {
-						JFileChooser fileChooser = new JFileChooser();
+						final JFileChooser fileChooser = new JFileChooser();
 						if (fileChooser.showSaveDialog(ControlWindow.this) == JFileChooser.APPROVE_OPTION) {
-							ExportProgressDialog progressDialog = new ExportProgressDialog(ControlWindow.this, images.length, fileChooser.getSelectedFile()
-									.getAbsolutePath());
+							final ExportProgressDialog progressDialog = new ExportProgressDialog(ControlWindow.this, images.length, fileChooser
+									.getSelectedFile().getAbsolutePath());
 							progressDialog.pack();
 							SwingHelper.moveToScreenCenter(progressDialog);
 							progressDialog.setVisible(true);
@@ -279,45 +284,81 @@ public class ControlWindow extends JFrame implements WindowListener {
 			}
 		});
 
-		JPanel controlsForDelayPanel = new JPanel(new BorderLayout());
+		btnLoad.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(final ActionEvent actEvent) {
+				final JFileChooser fileChooser = new JFileChooser();
+				fileChooser.setMultiSelectionEnabled(true);
+				if (JFileChooser.APPROVE_OPTION == fileChooser.showOpenDialog(ControlWindow.this)) {
+					final File files[] = fileChooser.getSelectedFiles();
+					Arrays.sort(files, new Comparator<File>() {
+						@Override
+						public int compare(final File o1, final File o2) {
+							return o1.getName().compareTo(o2.getName());
+						}
+					});
+					new Thread() {
+						public void run() {
+							for (final File file : files) {
+								try {
+									final BufferedImage image = ImageIO.read(file);
+									capturesTableModel.addImage(new CapturedImage(image));
+								} catch (final Exception e1) {
+									SwingUtilities.invokeLater(new Runnable() {
+										public void run() {
+											JOptionPane.showMessageDialog(ControlWindow.this, "Error occurred while loading: " + e1.getClass().getSimpleName()
+													+ " - " + e1.getMessage());
+										}
+									});
+								}
+							}
+						}
+					}.start();
+				}
+			}
+		});
+
+		final JPanel controlsForDelayPanel = new JPanel(new BorderLayout());
 		controlsForDelayPanel.add(sliderDelay, BorderLayout.CENTER);
 		controlsForDelayPanel.add(new JLabel("Delay (1/10 of second)"), BorderLayout.WEST);
 		controlsForDelayPanel.add(fldDelay, BorderLayout.EAST);
 		fldDelay.setPreferredSize(new Dimension(fldDelay.getFont().getSize() * 6, fldDelay.getPreferredSize().height));
 
-		JPanel buttonsForCapturingPanel = new JPanel(new BorderLayout());
+		final JPanel buttonsForCapturingPanel = new JPanel(new BorderLayout());
 		buttonsForCapturingPanel.add(btnCaptureSequence, BorderLayout.WEST);
 		buttonsForCapturingPanel.add(btnCaptureOne, BorderLayout.EAST);
 		buttonsForCapturingPanel.add(controlsForDelayPanel, BorderLayout.CENTER);
 
 		// TODO: stop overusing BorderLayout - use more appropriate layout here
-		JPanel controlsForCaptureRectControlPanel = new JPanel(new BorderLayout());
+		final JPanel controlsForCaptureRectControlPanel = new JPanel(new BorderLayout());
 		controlsForCaptureRectControlPanel.add(btnToggleViewCaptureRect, BorderLayout.WEST);
-		JPanel sliderOpacityPanel = new JPanel(new BorderLayout());
+		final JPanel sliderOpacityPanel = new JPanel(new BorderLayout());
 		sliderOpacityPanel.add(new JLabel("Opacity:"), BorderLayout.WEST);
 		sliderOpacityPanel.add(sliderOpacity, BorderLayout.CENTER);
 		controlsForCaptureRectControlPanel.add(sliderOpacityPanel, BorderLayout.CENTER);
 		controlsForCaptureRectControlPanel.add(btnResetCaptureRect, BorderLayout.EAST);
 
-		Container contentPane = this.getContentPane();
+		final Container contentPane = this.getContentPane();
 		contentPane.setLayout(new BorderLayout());
 		contentPane.add(buttonsForCapturingPanel, BorderLayout.NORTH);
 		contentPane.add(controlsForCaptureRectControlPanel, BorderLayout.SOUTH);
 
-		JPanel previewPanel = new JPanel(new BorderLayout());
-		previewPanel.add(btnSaveOne, BorderLayout.NORTH);
-		previewPanel.add(new JScrollPane(preview), BorderLayout.CENTER);
-		previewPanel.add(cbxImageFormat, BorderLayout.SOUTH);
+		final JPanel btnsPanel = new JPanel(new GridLayout(3, 2));
+		btnsPanel.add(btnExport);
+		btnsPanel.add(cbLoopGif);
+		btnsPanel.add(btnSaveOne);
+		btnsPanel.add(cbxImageFormat);
+		btnsPanel.add(btnLoad);
 
-		JPanel resultsPanel = new JPanel(new BorderLayout());
-		resultsPanel.add(btnExport, BorderLayout.NORTH);
-		resultsPanel.add(new JScrollPane(tblResults), BorderLayout.CENTER);
-		resultsPanel.add(cbLoopGif, BorderLayout.SOUTH);
-
-		JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, resultsPanel, previewPanel);
+		final JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, new JScrollPane(tblResults), new JScrollPane(preview));
 		split.setResizeWeight(0.5);
 		split.setDividerLocation(0.5);
-		contentPane.add(split, BorderLayout.CENTER);
+
+		final JPanel mainPanel = new JPanel(new BorderLayout());
+		mainPanel.add(split, BorderLayout.CENTER);
+		mainPanel.add(btnsPanel, BorderLayout.SOUTH);
+
+		contentPane.add(mainPanel, BorderLayout.CENTER);
 
 		tblResults.addKeyListener(new KeyListener() {
 
