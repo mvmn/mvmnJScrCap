@@ -1,0 +1,26 @@
+<project default="compile">
+    <target name="clean">
+        <delete dir="bin" />
+	<delete file="mvmnJScrCap.jar" />
+    </target>
+
+    <target name="compile">
+        <mkdir dir="bin" />
+        <javac srcdir="src" destdir="bin" includeantruntime="false" />
+    </target>
+
+    <target name="jar" depends="compile">
+	<delete file="mvmnJScrCap.jar" />
+        <jar destfile="mvmnJScrCap.jar" basedir="bin">
+            <manifest>
+                <attribute name="Main-Class" value="x.mvmn.jscrcap.JScrCap"/>
+            </manifest>
+        </jar>
+    </target>
+
+    <target name="run" depends="jar">
+        <java jar="mvmnJScrCap.jar" fork="true" />
+    </target>
+
+</project>
+
