@@ -24,7 +24,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
@@ -455,6 +454,7 @@ public class ControlWindow extends JFrame implements WindowListener {
 	private void doCapture(Rectangle captureRect) {
 		boolean captureRectWasVisible = captureRectFrame.isVisible();
 		captureRectFrame.setSize(0, 0);
+		this.setVisible(false);
 		if (captureRectWasVisible) {
 			captureRectFrame.setVisible(false);
 			try {
@@ -474,5 +474,6 @@ public class ControlWindow extends JFrame implements WindowListener {
 			} catch (InterruptedException e) {}
 			captureRectFrame.setVisible(true);
 		}
+		this.setVisible(true);
 	}
 }
