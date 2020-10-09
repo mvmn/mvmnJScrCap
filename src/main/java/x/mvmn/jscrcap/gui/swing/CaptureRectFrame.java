@@ -14,7 +14,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-import x.mvmn.jscrcap.util.swing.SwingHelper;
+import x.mvmn.jscrcap.util.swing.SwingUtil;
 
 public class CaptureRectFrame extends JFrame {
 	private static final long serialVersionUID = 5152573028950399411L;
@@ -114,7 +114,7 @@ public class CaptureRectFrame extends JFrame {
 		});
 
 		this.setSize(400, 300);
-		locationOnScreen = SwingHelper.moveToScreenCenter(this);
+		locationOnScreen = SwingUtil.moveToScreenCenter(this);
 		updateInspector();
 		setOpacity(0.55f);
 	}
@@ -136,7 +136,7 @@ public class CaptureRectFrame extends JFrame {
 	}
 
 	public void updateInspector() {
-		SwingHelper.getComponentRect(locationOnScreen, this, componentRect);
+		SwingUtil.getComponentRect(locationOnScreen, this, componentRect);
 		inspectorLabel.setText(componentRect.toString());
 	}
 

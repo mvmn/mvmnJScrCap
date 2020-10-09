@@ -3,6 +3,10 @@ package x.mvmn.jscrcap.gui.swing;
 import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
@@ -19,6 +23,8 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
@@ -36,8 +42,6 @@ import javax.swing.JSplitPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
@@ -45,7 +49,7 @@ import x.mvmn.jscrcap.model.CapturedImage;
 import x.mvmn.jscrcap.model.CapturesTableModel;
 import x.mvmn.jscrcap.util.GifExportThread;
 import x.mvmn.jscrcap.util.SequenceCaptureThread;
-import x.mvmn.jscrcap.util.swing.SwingHelper;
+import x.mvmn.jscrcap.util.swing.SwingUtil;
 
 public class ControlWindow extends JFrame implements WindowListener {
 
@@ -61,6 +65,8 @@ public class ControlWindow extends JFrame implements WindowListener {
 	private final JTable tblResults;
 	private final JLabel preview = new JLabel();
 	private final JButton btnCaptureOne = new JButton("Capture image");
+	private final JButton btnCaptureFullScreen = new JButton("Capture full screen");
+	private final JComboBox<String> cbxScreen;
 	private final JButton btnCaptureSequence = new JButton("Start sequence capturing");
 	private final JButton btnSaveOne = new JButton("Save image");
 	private final JButton btnExport = new JButton("Export animated GIF");
@@ -78,6 +84,12 @@ public class ControlWindow extends JFrame implements WindowListener {
 
 	public ControlWindow() {
 		super("MVMn Java Screen Capture tool");
+
+		GraphicsDevice[] screens = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices();
+		cbxScreen = new JComboBox<String>(IntStream.range(0, screens.length)
+				.mapToObj(i -> "Display #" + i + " (" + screens[i].getDefaultConfiguration().getBounds().width + "x"
+						+ screens[i].getDefaultConfiguration().getBounds().height + ")")
+				.toArray(String[]::new));
 
 		Set<String> uniqueFormatNames = new HashSet<String>();
 		{
@@ -132,53 +144,17 @@ public class ControlWindow extends JFrame implements WindowListener {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				captureRectFrame.setSize(400, 300);
-				SwingHelper.moveToScreenCenter(captureRectFrame);
+				SwingUtil.moveToScreenCenter(captureRectFrame);
 			}
 		});
 
-		btnCaptureOne.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent actEvent) {
-				boolean captureRectWasVisible = captureRectFrame.isVisible();
-				Rectangle captureRect = captureRectFrame.getRectSnapshot();
-				captureRectFrame.setSize(0, 0);
-				if (captureRectWasVisible) {
-					captureRectFrame.setVisible(false);
-					try {
-						// TODO: Dirty workaround for OS X - investigate
-						// alternatives
-						Thread.sleep(50);
-					} catch (InterruptedException e) {
-					}
-				}
-				BufferedImage screenshot = SwingHelper.getRobot().createScreenCapture(captureRect);
-				capturesTableModel.addImage(new CapturedImage(screenshot));
-				captureRectFrame.setSize(captureRect.width, captureRect.height);
-				if (captureRectWasVisible) {
-					try {
-						// TODO: Dirty workaround for OS X - investigate
-						// alternatives
-						Thread.sleep(15);
-					} catch (InterruptedException e) {
-					}
-					captureRectFrame.setVisible(true);
-				}
-			}
-		});
+		btnCaptureOne.addActionListener(e -> doCapture(captureRectFrame.getRectSnapshot()));
+		btnCaptureFullScreen.addActionListener(e -> doCapture(screens[cbxScreen.getSelectedIndex()].getDefaultConfiguration().getBounds()));
 
-		sliderOpacity.addChangeListener(new ChangeListener() {
-			@Override
-			public void stateChanged(ChangeEvent e) {
-				ControlWindow.this.captureRectFrame.setOpacity(((float) ControlWindow.this.sliderOpacity.getValue()) / 100);
-			}
-		});
+		sliderOpacity.addChangeListener(
+				e -> ControlWindow.this.captureRectFrame.setOpacity(((float) ControlWindow.this.sliderOpacity.getValue()) / 100));
 
-		sliderDelay.addChangeListener(new ChangeListener() {
-			@Override
-			public void stateChanged(ChangeEvent e) {
-				fldDelay.setText(String.valueOf(ControlWindow.this.sliderDelay.getValue()));
-			}
-		});
+		sliderDelay.addChangeListener(e -> fldDelay.setText(String.valueOf(ControlWindow.this.sliderDelay.getValue())));
 		fldDelay.addKeyListener(new KeyListener() {
 			private final Pattern NUMERIC = Pattern.compile("\\d+");
 
@@ -200,8 +176,7 @@ public class ControlWindow extends JFrame implements WindowListener {
 							if (intVal != validIntVal) {
 								fldDelay.setText(String.valueOf(validIntVal));
 							}
-						} catch (Exception pe) {
-						}
+						} catch (Exception pe) {}
 					} else {
 						fldDelay.setText(val.replaceAll("[^\\d]", ""));
 					}
@@ -209,12 +184,10 @@ public class ControlWindow extends JFrame implements WindowListener {
 			}
 
 			@Override
-			public void keyReleased(KeyEvent e) {
-			}
+			public void keyReleased(KeyEvent e) {}
 
 			@Override
-			public void keyPressed(KeyEvent e) {
-			}
+			public void keyPressed(KeyEvent e) {}
 		});
 
 		btnCaptureSequence.addActionListener(new ActionListener() {
@@ -223,8 +196,8 @@ public class ControlWindow extends JFrame implements WindowListener {
 				synchronized (CAPTURE_THREAD_LOCK_OBJECT) {
 					SequenceCaptureThread thread = captureThread;
 					if (thread == null) {
-						thread = new SequenceCaptureThread(ControlWindow.this.capturesTableModel, ControlWindow.this.captureRectFrame.getRectSnapshot(),
-								sliderDelay.getValue());
+						thread = new SequenceCaptureThread(ControlWindow.this.capturesTableModel,
+								ControlWindow.this.captureRectFrame.getRectSnapshot(), sliderDelay.getValue());
 						thread.start();
 						captureThread = thread;
 						btnCaptureSequence.setText("Stop sequence capturing");
@@ -232,8 +205,7 @@ public class ControlWindow extends JFrame implements WindowListener {
 						thread.requestStop();
 						try {
 							thread.interrupt();
-						} catch (Exception ex) {
-						}
+						} catch (Exception ex) {}
 						while (!thread.isStopped()) {
 							// TODO: reconsider
 							Thread.yield();
@@ -268,13 +240,13 @@ public class ControlWindow extends JFrame implements WindowListener {
 					if (sizesOkToExport) {
 						final JFileChooser fileChooser = new JFileChooser();
 						if (fileChooser.showSaveDialog(ControlWindow.this) == JFileChooser.APPROVE_OPTION) {
-							final ExportProgressDialog progressDialog = new ExportProgressDialog(ControlWindow.this, images.length, fileChooser
-									.getSelectedFile().getAbsolutePath());
+							final ExportProgressDialog progressDialog = new ExportProgressDialog(ControlWindow.this, images.length,
+									fileChooser.getSelectedFile().getAbsolutePath());
 							progressDialog.pack();
-							SwingHelper.moveToScreenCenter(progressDialog);
+							SwingUtil.moveToScreenCenter(progressDialog);
 							progressDialog.setVisible(true);
-							GifExportThread exportThread = new GifExportThread(ControlWindow.this, progressDialog, images, sliderDelay.getValue(), fileChooser
-									.getSelectedFile(), cbLoopGif.isSelected());
+							GifExportThread exportThread = new GifExportThread(ControlWindow.this, progressDialog, images,
+									sliderDelay.getValue(), fileChooser.getSelectedFile(), cbLoopGif.isSelected());
 							exportThread.start();
 						}
 					}
@@ -306,8 +278,8 @@ public class ControlWindow extends JFrame implements WindowListener {
 								} catch (final Exception e1) {
 									SwingUtilities.invokeLater(new Runnable() {
 										public void run() {
-											JOptionPane.showMessageDialog(ControlWindow.this, "Error occurred while loading: " + e1.getClass().getSimpleName()
-													+ " - " + e1.getMessage());
+											JOptionPane.showMessageDialog(ControlWindow.this, "Error occurred while loading: "
+													+ e1.getClass().getSimpleName() + " - " + e1.getMessage());
 										}
 									});
 								}
@@ -318,16 +290,36 @@ public class ControlWindow extends JFrame implements WindowListener {
 			}
 		});
 
-		final JPanel controlsForDelayPanel = new JPanel(new BorderLayout());
-		controlsForDelayPanel.add(sliderDelay, BorderLayout.CENTER);
-		controlsForDelayPanel.add(new JLabel("Delay (1/10 of second)"), BorderLayout.WEST);
-		controlsForDelayPanel.add(fldDelay, BorderLayout.EAST);
+		final JPanel buttonsForCapturingPanel = new JPanel(new GridBagLayout());
+		GridBagConstraints gbc = new GridBagConstraints();
+		gbc.gridx = 0;
+		gbc.gridy = 0;
+		gbc.weightx = 0;
+		gbc.fill = GridBagConstraints.NONE;
+		buttonsForCapturingPanel.add(btnCaptureSequence, gbc);
+		gbc.gridx++;
+		gbc.weightx = 0.8;
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		buttonsForCapturingPanel.add(sliderDelay, gbc);
+		gbc.gridx++;
+		gbc.weightx = 0;
+		gbc.fill = GridBagConstraints.NONE;
+		buttonsForCapturingPanel.add(new JLabel("Delay (1/10 of second)"), gbc);
 		fldDelay.setPreferredSize(new Dimension(fldDelay.getFont().getSize() * 6, fldDelay.getPreferredSize().height));
-
-		final JPanel buttonsForCapturingPanel = new JPanel(new BorderLayout());
-		buttonsForCapturingPanel.add(btnCaptureSequence, BorderLayout.WEST);
-		buttonsForCapturingPanel.add(btnCaptureOne, BorderLayout.EAST);
-		buttonsForCapturingPanel.add(controlsForDelayPanel, BorderLayout.CENTER);
+		gbc.gridx++;
+		gbc.weightx = 0.1;
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		buttonsForCapturingPanel.add(fldDelay, gbc);
+		gbc.gridx++;
+		gbc.weightx = 0;
+		gbc.fill = GridBagConstraints.NONE;
+		buttonsForCapturingPanel.add(btnCaptureOne, gbc);
+		gbc.gridx++;
+		buttonsForCapturingPanel.add(btnCaptureFullScreen, gbc);
+		if (screens.length > 1) {
+			gbc.gridx++;
+			buttonsForCapturingPanel.add(cbxScreen, gbc);
+		}
 
 		// TODO: stop overusing BorderLayout - use more appropriate layout here
 		final JPanel controlsForCaptureRectControlPanel = new JPanel(new BorderLayout());
@@ -363,8 +355,7 @@ public class ControlWindow extends JFrame implements WindowListener {
 		tblResults.addKeyListener(new KeyListener() {
 
 			@Override
-			public void keyTyped(KeyEvent e) {
-			}
+			public void keyTyped(KeyEvent e) {}
 
 			@Override
 			public void keyReleased(KeyEvent e) {
@@ -387,8 +378,7 @@ public class ControlWindow extends JFrame implements WindowListener {
 			}
 
 			@Override
-			public void keyPressed(KeyEvent e) {
-			}
+			public void keyPressed(KeyEvent e) {}
 		});
 
 		tblResults.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
@@ -430,12 +420,11 @@ public class ControlWindow extends JFrame implements WindowListener {
 		this.addWindowListener(this);
 		this.pack();
 		split.setDividerLocation(0.5);
-		SwingHelper.moveToScreenCenter(this);
+		SwingUtil.moveToScreenCenter(this);
 	}
 
 	@Override
-	public void windowOpened(WindowEvent e) {
-	}
+	public void windowOpened(WindowEvent e) {}
 
 	@Override
 	public void windowClosing(WindowEvent e) {
@@ -450,8 +439,7 @@ public class ControlWindow extends JFrame implements WindowListener {
 	}
 
 	@Override
-	public void windowIconified(WindowEvent e) {
-	}
+	public void windowIconified(WindowEvent e) {}
 
 	@Override
 	public void windowDeiconified(WindowEvent e) {
@@ -459,10 +447,32 @@ public class ControlWindow extends JFrame implements WindowListener {
 	}
 
 	@Override
-	public void windowActivated(WindowEvent e) {
-	}
+	public void windowActivated(WindowEvent e) {}
 
 	@Override
-	public void windowDeactivated(WindowEvent e) {
+	public void windowDeactivated(WindowEvent e) {}
+
+	private void doCapture(Rectangle captureRect) {
+		boolean captureRectWasVisible = captureRectFrame.isVisible();
+		captureRectFrame.setSize(0, 0);
+		if (captureRectWasVisible) {
+			captureRectFrame.setVisible(false);
+			try {
+				// TODO: Dirty workaround for OS X - investigate
+				// alternatives
+				Thread.sleep(50);
+			} catch (InterruptedException e) {}
+		}
+		BufferedImage screenshot = SwingUtil.getRobot().createScreenCapture(captureRect);
+		capturesTableModel.addImage(new CapturedImage(screenshot));
+		captureRectFrame.setSize(captureRect.width, captureRect.height);
+		if (captureRectWasVisible) {
+			try {
+				// TODO: Dirty workaround for OS X - investigate
+				// alternatives
+				Thread.sleep(15);
+			} catch (InterruptedException e) {}
+			captureRectFrame.setVisible(true);
+		}
 	}
 }

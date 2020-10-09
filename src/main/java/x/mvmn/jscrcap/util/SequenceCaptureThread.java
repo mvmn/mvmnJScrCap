@@ -5,7 +5,7 @@ import java.awt.image.BufferedImage;
 
 import x.mvmn.jscrcap.model.CapturedImage;
 import x.mvmn.jscrcap.model.CapturesTableModel;
-import x.mvmn.jscrcap.util.swing.SwingHelper;
+import x.mvmn.jscrcap.util.swing.SwingUtil;
 
 public class SequenceCaptureThread extends Thread {
 
@@ -29,7 +29,7 @@ public class SequenceCaptureThread extends Thread {
 		boolean stopMe = false;
 		while (!stopMe) {
 			try {
-				BufferedImage screenshot = SwingHelper.getRobot().createScreenCapture(captureArea);
+				BufferedImage screenshot = SwingUtil.getRobot().createScreenCapture(captureArea);
 				capturesTableModel.addImage(new CapturedImage(screenshot));
 				if (captureInterval != 0) {
 					Thread.sleep(captureInterval);
