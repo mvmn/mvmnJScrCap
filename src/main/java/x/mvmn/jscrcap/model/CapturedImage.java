@@ -6,27 +6,27 @@ import java.util.Date;
 
 public class CapturedImage {
 
-	private final BufferedImage image;
-	private final long captureTime;
-	private final String stringRepresentation;
+    private final BufferedImage image;
+    private final long captureTime;
+    private final String stringRepresentation;
 
-	public CapturedImage(BufferedImage image) {
-		this.image = image;
-		this.captureTime = System.currentTimeMillis();
-		stringRepresentation = "Time: " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(captureTime)) + "; Size: " + image.getWidth() + " x "
-				+ image.getHeight();
-	}
+    public CapturedImage(BufferedImage image) {
+        this.image = image;
+        this.captureTime = System.currentTimeMillis();
+        stringRepresentation = "Time: " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(captureTime))
+                + "; Size: " + image.getWidth() + " x " + image.getHeight();
+    }
 
-	public BufferedImage getImage() {
-		return image;
-	}
+    public BufferedImage getImage() {
+        return image;
+    }
 
-	public long getCaptureTime() {
-		return captureTime;
-	}
+    public long getCaptureTime() {
+        return captureTime;
+    }
 
-	public String toString() {
-		return stringRepresentation;
-	}
+    public String toString() {
+        return stringRepresentation;
+    }
 
 }
